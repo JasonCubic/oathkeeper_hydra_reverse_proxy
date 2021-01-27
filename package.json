@@ -1,0 +1,38 @@
+{
+  "name": "deployment-demo-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "npm": "please-use-yarn",
+    "yarn": ">= 1.17.3",
+    "node": ">= 10.14.1"
+  },
+  "scripts": {
+    "start": "yarn run dev:up",
+
+    "dev:up": "docker-compose -f ./docker/docker-compose.dev.yml up -d",
+    "dev:build": "docker-compose -f ./docker/docker-compose.dev.yml build",
+    "dev:down": "docker-compose -f ./docker/docker-compose.dev.yml down --rmi all --volumes --remove-orphans",
+    "dev:refresh": "yarn run dev:down && yarn run dev:build && yarn run dev:up",
+
+    "qa:up": "docker-compose -f ./docker/docker-compose.qa.yml up -d",
+    "qa:build": "docker-compose -f ./docker/docker-compose.qa.yml build",
+    "qa:down": "docker-compose -f ./docker/docker-compose.qa.yml down --rmi all --volumes --remove-orphans",
+    "qa:refresh": "yarn run qa:down && yarn run qa:build && yarn run qa:up",
+
+    "prod:up": "docker-compose -f ./docker/docker-compose.prod.yml up -d",
+    "prod:build": "docker-compose -f ./docker/docker-compose.prod.yml build",
+    "prod:down": "docker-compose -f ./docker/docker-compose.prod.yml down --rmi all --volumes --remove-orphans",
+    "prod:refresh": "yarn run prod:down && yarn run prod:build && yarn run prod:up",
+
+    "clean": "node ./utils/packages-exec.js rm -rf node_modules && rm -rf node_modules"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+
+  oathkeeper:
+    container_name: oathkeeper
+    build:
+      context: ../
+      dockerfile: ./packages/iap-oathkeeper/Dockerfile
+    ports:
+      - "8083:8083" # reverse proxy port configured in .oathkeeper.yaml
+      - "4456:4456" # oathkeeper rest api (does not need to be open for reverse proxy to work) http://localhost:4456/rules
+      - "9000:9000" # Prometheus scraping endpoint (does not need to be open for reverse proxy to work)
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ../
+      dockerfile: ./packages/frontend/Dockerfile
+
+  backend:
+    container_name: backend
+    build:
+      context: ../
+      dockerfile: ./packages/backend/Dockerfile
+    environment:
+      - NODE_ENV=production

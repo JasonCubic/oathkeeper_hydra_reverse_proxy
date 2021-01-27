@@ -1,0 +1,76 @@
+- id: backend
+  upstream:
+    preserve_host: true
+    url: http://backend:8084
+  match:
+    # url: http://localhost:8083/api/<.*>
+    url: <http|https>://<localhost|127.0.0.1>:8083/api/<.*>
+    methods:
+      - GET
+      - POST
+  authenticators:
+    # https://www.ory.sh/oathkeeper/docs/pipeline/authn#anonymous
+    - handler: anonymous
+      config:
+        subject: guest
+  authorizer:
+    handler: allow
+  mutators:
+    # https://www.ory.sh/oathkeeper/docs/pipeline/mutator#header
+    - handler: header
+      config:
+        headers:
+          X-User: '{{ print .Subject }}' # pulls this value from your authenticator config object above
+          # X-Hey: 'You can set custom headers here if you wanted to'
+  errors:
+    - handler: json
+
+
+- id: frontend
+  upstream:
+    preserve_host: true
+    url: http://frontend:8080
+  match:
+    # https://www.ory.sh/oathkeeper/docs/api-access-rules
+    # url: <.*>:8083/<two*>
+    # url: <http|https>://<.*>:8083/<two*>
+    # url: <http|https>://<.*>/<two*>
+    # url: <http|https>://<localhost:8083|127.0.0.1:8083>/<two*>
+    url: <http|https>://<localhost|127.0.0.1>:8083/<(?!api).*>
+    methods:
+      - GET
+  authenticators:
+    # https://www.ory.sh/oathkeeper/docs/pipeline/authn#noop
+    # - handler: noop
+    - handler: oauth2_introspection
+      config:
+        introspection_url: https://127.0.0.1:4444/oauth2/introspection
+        scope_strategy: exact
+        required_scope:
+          - photo
+          - profile
+        pre_authorization:
+          enabled: true
+          client_id: some_id
+          client_secret: some_secret
+          scope:
+            - introspect
+          token_url: https://127.0.0.1:4444/oauth2/token
+        token_from:
+          query_parameter: auth-token
+          # or
+          # header: Custom-Authorization-Header
+          # or
+          # cookie: auth-token
+        # introspection_request_headers:
+          # x-forwarded-proto: https
+          # x-foo: bar
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
+  errors:
+    # - handler: json
+    - handler: redirect
+      config:
+        to: http://127.0.0.1:3000/login

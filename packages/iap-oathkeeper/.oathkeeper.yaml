@@ -1,0 +1,104 @@
+## ORY Oathkeeper Server Configuration
+# this is global for this server, but can be overridden by the rules
+# reference: https://www.ory.sh/oathkeeper/docs/reference/configuration
+
+serve:
+  ## Reverse Proxy ##
+  proxy:
+    port: 8083
+    host: 0.0.0.0
+
+
+access_rules:
+  repositories:
+    - file://home/ory/rules.yaml
+
+
+# For more information on authenticators head over to: https://www.ory.sh/oathkeeper/docs/pipeline/authn
+authenticators:
+  # The [`anonymous` authenticator](https://www.ory.sh/oathkeeper/docs/pipeline/authn#anonymous).
+  anonymous:
+    enabled: true
+    config:
+      subject: unknown
+  # The [`noop` authenticator](https://www.ory.sh/oathkeeper/docs/pipeline/authn#noop).
+  noop:
+    enabled: true
+  # oauth2_client_credentials:
+  #   # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
+  #   enabled: true
+  #   config:
+  #     # https://www.ory.sh/hydra/docs/reference/api/#the-oauth-20-token-endpoint
+  #     token_url: http://127.0.0.1:4444/oauth2/token
+  oauth2_introspection:
+    # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
+    enabled: true
+
+    config:
+      introspection_url: https://127.0.0.1:4444/oauth2/introspection
+      scope_strategy: exact
+      required_scope:
+        - photo
+        - profile
+      pre_authorization:
+        enabled: true
+        client_id: some_id
+        client_secret: some_secret
+        scope:
+          - introspect
+        token_url: https://127.0.0.1:4444/oauth2/token
+      token_from:
+        header: Custom-Authorization-Header
+        # or
+        # query_parameter: auth-token
+        # or
+        # cookie: auth-token
+      # introspection_request_headers:
+        # x-forwarded-proto: https
+      cache:
+        enabled: true
+        ttl: 60s
+
+## Error Handling ##
+errors:
+  handlers:
+    json:
+      config:
+        verbose: true
+      enabled: true
+    redirect:
+      enabled: true
+      config:
+        to: http://127.0.0.1:3000/login
+        when:
+          -
+            error:
+              - unauthorized
+              - forbidden
+            request:
+              header:
+                accept:
+                  - text/html
+
+# For more information on authorizers head over to: https://www.ory.sh/oathkeeper/docs/pipeline/authz
+authorizers:
+  # The [`allow` authorizer](https://www.ory.sh/oathkeeper/docs/pipeline/authz#allow).
+  allow:
+    enabled: true
+
+
+# For more information on mutators head over to: https://www.ory.sh/oathkeeper/docs/pipeline/mutator
+mutators:
+  # The [`noop` mutator](https://www.ory.sh/oathkeeper/docs/pipeline/mutator#noop).
+  noop:
+    enabled: true
+  # The [`header` mutator](https://www.ory.sh/oathkeeper/docs/pipeline/mutator#header).
+  # header:
+  #   enabled: false
+  header:
+    # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
+    enabled: true
+    config:
+      headers:
+        X-User: '{{ print .Subject }}'
+        # X-Some-Arbitrary-Data: '{{ print .Extra.some.arbitrary.data }}'
